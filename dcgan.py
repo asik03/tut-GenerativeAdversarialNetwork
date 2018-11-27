@@ -1,5 +1,5 @@
 import os
-import cv2
+#import cv2
 import glob
 import gzip
 import math
@@ -10,16 +10,16 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 
-from PIL import Image
-from tqdm import tqdm
+# from PIL import Image
+# from tqdm import tqdm
 from six.moves import xrange
-from urllib.request import urlretrieve
-from scipy.misc import imsave, imread, imresize
+#from urllib.request import urlretrieve
+#from scipy.misc import imsave, imread, imresize
 from tensorflow.examples.tutorials.mnist import input_data
 
 # comment below two lines to implement this code with GPU
-os.environ['CUDA_DEVICE_ORDER'] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = '-1'
+#os.environ['CUDA_DEVICE_ORDER'] = "PCI_BUS_ID"
+#os.environ["CUDA_VISIBLE_DEVICES"] = '-1'
 
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 DATA_DIR = os.path.join(DIR_PATH, "data")  # path for your results
@@ -45,7 +45,7 @@ class DCGAN():
 
     def build_model(self):
         self.is_training = tf.placeholder(tf.bool, name="is_training")
-        self.img = tf.placeholder(tf.float32, [None]+self.img_shape, name='real_images')
+        self.img = tf.placeholder(tf.float32, [None] + self.img_shape, name='real_images')
 
         self.z = tf.placeholder(tf.float32, [None, self.z_dim], name='z')
         self.z_sum = tf.summary.histogram('z', self.z)
@@ -71,42 +71,43 @@ class DCGAN():
         self.D_loss_real = tf.reduce_mean(
             tf.nn.sigmoid_cross_entropy_with_logits(logits=self.D_logits_real, labels=tf.ones_like(self.D_logits_real)))
         self.D_loss_fake = tf.reduce_mean(
-            tf.nn.sigmoid_cross_entropy_with_logits(logits=self.D_logits_fake, labels=tf.zeros_like(self.D_logits_fake)))
+            tf.nn.sigmoid_cross_entropy_with_logits(logits=self.D_logits_fake,
+                                                    labels=tf.zeros_like(self.D_logits_fake)))
         self.D_loss = self.D_loss_real + self.D_loss_fake
         self.G_loss = tf.reduce_mean(
             tf.nn.sigmoid_cross_entropy_with_logits(logits=self.D_logits_fake, labels=tf.ones_like(self.D_logits_fake)))
-
 
     def generator(self, z, is_training=True, reuse=False):
         # TODO: generate fake image with randonm z with 4 layers
         alpha = 0.2
         with tf.variable_scope("generator") as scope:
-
             # First fully connected layer
-            x1 = tf.layers.dense(z, 7*7*256)
+            x1 = tf.layers.dense(z, 7 * 7 * 256)
             x1 = tf.reshape(x1, (-1, 7, 7, 256))
             x1 = tf.layers.batch_normalization(x1, training=is_training)
-            x1 = tf.maximum(alpha * x1, x1) # works as relu
+            x1 = tf.maximum(alpha * x1, x1)  # works as relu
 
             # Second convolution layer
             # TODO: After 2d transpose convolution, the shape of x2 is 14*14*128
-            x2 =
+            x2 = tf.layers.conv2d_transpose(x1, 128, 5, strides=2, padding="same")
             # TODO: Batch normalization of x2
-            x2 =
-
+            # Reduces the internal covariance shift i.e. it makes the learning of layers in the network more independent of each other.
+            x2 = tf.layers.batch_normalization(x2, training=is_training)
+            # AS relu
             x2 = tf.maximum(alpha * x2, x2)
 
             # Third convolution layer
             # TODO:2d transpose convolution as the second convolution layer, after that, the shape of x3 is 28*28*64
-            x3 =
+            x3 = tf.layers.conv2d_transpose(x2, 64, 5, strides=2, padding="same")
             # Batch normalization of x3
-            x3 =
+            x3 = tf.layers.batch_normalization(x3, training=is_training)
+            # As relu
             x3 = tf.maximum(alpha * x3, x3)
-
+            # Dropout
             drop = tf.nn.dropout(x3, keep_prob=0.5)
 
             # Output layer
-            logits = tf.layers.conv2d_transpose(drop, 1, 5, strides=1, padding='same')
+            logits = tf.layers.conv2d_transpose(drop, 1, 5, strides=1, padding="same")
 
             out = tf.tanh(logits)
 
@@ -121,19 +122,20 @@ class DCGAN():
             x1 = tf.maximum(alpha * x1, x1)
 
             # TODO: Second convolution layer, the shape of x2 is 7*7*128
-            x2 =
+            x2 = tf.layers.conv2d(x1, 128, 5, strides=2, padding='same')
+
             # TODO: Batch normalization of x2
-            bn2 = 
+            bn2 = tf.layers.batch_normalization(x2)
             x2 = tf.maximum(alpha * bn2, bn2)
 
             # TODO: complete third convolution layer, the shape of x3 should be 4*4*256
-            x3 =
+            x3 = tf.layers.conv2d(x2, 256, 5, strides=2, padding='same')
             # batch_normalization
-            bn3 =
+            bn3 = tf.layers.batch_normalization(x3)
             x3 = tf.maximum(alpha * bn3, bn3)
 
             # last layer
-            x4 = tf.reshape(x3, (-1, 4*4*256))
+            x4 = tf.reshape(x3, (-1, 4 * 4 * 256))
             logits = tf.layers.dense(x4, 1)
             out = tf.sigmoid(logits)
             return out, logits
@@ -184,15 +186,16 @@ class DCGAN():
                     epoch, D_loss_curr, G_loss_curr))
 
                 samples = self.sess.run(self.img_fake, feed_dict={self.z: input_z})
-                #import pdb; pdb.set_trace()
+                # import pdb; pdb.set_trace()
                 fig = self.plot(samples)
                 if not os.path.exists(output_path):
                     os.makedirs(output_path)
                 plt.savefig(os.path.join(output_path, '{}.png'.format(str(i).zfill(3))), bbox_inches='tight')
                 i += 1
                 plt.close(fig)
-def run():
 
+
+def run():
     # save
     flags = tf.app.flags
     flags.DEFINE_integer("img_size", 28, "Image size.")
@@ -203,11 +206,14 @@ def run():
     FLAGS = flags.FLAGS
 
     config = tf.ConfigProto(
-            device_count = {'GPU': 0}) # If you wanna implement this code with GPU, change 0 to 1 or 2
+        device_count={'GPU': 1})  # If you wanna implement this code with GPU, change 0 to 1 or 2
     with tf.Session(config=config) as sess:
         dcgan = DCGAN(sess, img_size=FLAGS.img_size, z_dim=FLAGS.z_dim,
-                batch_size=FLAGS.batch_size, epoch=FLAGS.epoch)
+                      batch_size=FLAGS.batch_size, epoch=FLAGS.epoch)
+        var = dcgan.img_fake
+        print(var)
         dcgan.train(OUTPUT_PATH)
+
 
 if __name__ == "__main__":
     run()
