@@ -78,7 +78,6 @@ class DCGAN():
             tf.nn.sigmoid_cross_entropy_with_logits(logits=self.D_logits_fake, labels=tf.ones_like(self.D_logits_fake)))
 
     def generator(self, z, is_training=True, reuse=False):
-        # TODO: generate fake image with randonm z with 4 layers
         alpha = 0.2
         with tf.variable_scope("generator") as scope:
             # First fully connected layer
@@ -88,16 +87,13 @@ class DCGAN():
             x1 = tf.maximum(alpha * x1, x1)  # works as relu
 
             # Second convolution layer
-            # TODO: After 2d transpose convolution, the shape of x2 is 14*14*128
             x2 = tf.layers.conv2d_transpose(x1, 128, 5, strides=2, padding="same")
-            # TODO: Batch normalization of x2
             # Reduces the internal covariance shift i.e. it makes the learning of layers in the network more independent of each other.
             x2 = tf.layers.batch_normalization(x2, training=is_training)
             # AS relu
             x2 = tf.maximum(alpha * x2, x2)
 
             # Third convolution layer
-            # TODO:2d transpose convolution as the second convolution layer, after that, the shape of x3 is 28*28*64
             x3 = tf.layers.conv2d_transpose(x2, 64, 5, strides=2, padding="same")
             # Batch normalization of x3
             x3 = tf.layers.batch_normalization(x3, training=is_training)
@@ -114,21 +110,17 @@ class DCGAN():
             return out
 
     def discriminator(self, img, reuse=False):
-        # TODO: discriminate the input img whether a real one or fake one.
         alpha = 0.2
         with tf.variable_scope("discriminator", reuse=reuse):
             # The shape of img is 28*28*3, the shape of x1 is 14*14*64
             x1 = tf.layers.conv2d(img, 64, 5, strides=2, padding='same')
             x1 = tf.maximum(alpha * x1, x1)
 
-            # TODO: Second convolution layer, the shape of x2 is 7*7*128
             x2 = tf.layers.conv2d(x1, 128, 5, strides=2, padding='same')
 
-            # TODO: Batch normalization of x2
             bn2 = tf.layers.batch_normalization(x2)
             x2 = tf.maximum(alpha * bn2, bn2)
 
-            # TODO: complete third convolution layer, the shape of x3 should be 4*4*256
             x3 = tf.layers.conv2d(x2, 256, 5, strides=2, padding='same')
             # batch_normalization
             bn3 = tf.layers.batch_normalization(x3)
