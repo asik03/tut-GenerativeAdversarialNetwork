@@ -202,8 +202,6 @@ def run():
     with tf.Session(config=config) as sess:
         dcgan = DCGAN(sess, img_size=FLAGS.img_size, z_dim=FLAGS.z_dim,
                       batch_size=FLAGS.batch_size, epoch=FLAGS.epoch)
-        var = dcgan.img_fake
-        print(var)
         dcgan.train(OUTPUT_PATH)
 
 
